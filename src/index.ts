@@ -1,6 +1,5 @@
 import "./styles.css";
 import "../node_modules/tabulator-tables/dist/css/tabulator_bootstrap5.min.css";
-import statusData from "../public/status.json"
 
 import {
 	CellComponent,
@@ -20,14 +19,11 @@ import {
 } from "tabulator-tables";
 
 type SearchEntry = {
-	codepoints: string;
-	qualification: string;
-	emoji: string;
-	description: string;
-	version: string;
-	group: string;
-	subgroup: string;
-	keywords?: string[];
+	alpha_3_b: string;
+	alpha_3_t: string;
+	alpha_2: string;
+	name_en: string;
+	name_fr: string;
 };
 
 type SearchData = {
@@ -35,34 +31,22 @@ type SearchData = {
 	data: SearchEntry[];
 };
 
-type EmojiData = {
-	codepoints: string;
-	order: number;
-	emoji: string;
-	description: string;
-	tags: string[];
-	keywords?: string[];
-}
 
-const dataUrl = "/emoji.json";
+const dataUrl = "/iso-639-2.json";
 
-function filterDescription(
+function filterRegex(
 	headerValue: string,
-	sortValue: string,
+	rowValue: string,
 	rowData: any,
 	filterParams: any
 ) {
 	if (!headerValue) return true;
 
-	const rowValues = [rowData.description, ...(rowData.keywords || [])];
-
 	if (headerValue.length == 1 && headerValue != "^" && headerValue != "/") {
 		// single character, do starts with
 		const search = headerValue.toLowerCase();
-		for (const rowValue of rowValues) {
-			if (rowValue.toLowerCase().startsWith(search)) {
-				return true;
-			}
+		if (rowValue.toLowerCase().startsWith(search)) {
+			return true;
 		}
 		return false;
 	}
@@ -73,10 +57,8 @@ function filterDescription(
 			return true;
 		}
 		const search = headerValue.substring(1).toLowerCase();
-		for (const rowValue of rowValues) {
-			if (rowValue.toLowerCase().startsWith(search)) {
-				return true;
-			}
+		if (rowValue.toLowerCase().startsWith(search)) {
+			return true;
 		}
 		return false;
 	}
@@ -86,10 +68,8 @@ function filterDescription(
 		const pattern = headerValue.substring(1, headerValue.length - 1);
 		try {
 			const re = new RegExp(pattern, "i");
-			for (const rowValue of rowValues) {
-				if (re.test(rowValue)) {
-					return true;
-				}
+			if (re.test(rowValue)) {
+				return true;
 			}
 			return false;
 		} catch (e) {
@@ -100,89 +80,11 @@ function filterDescription(
 
 	// contains
 	const search = headerValue.toLowerCase();
-	for (const rowValue of rowValues) {
-		if (rowValue.toLowerCase().includes(search)) {
-			return true;
-		}
+	if (rowValue.toLowerCase().includes(search)) {
+		return true;
 	}
 	return false;
 }
-
-function filterTags(
-	headerValue: string,
-	rowValue: string[],
-	rowData: any,
-	filterParams: any
-) {
-	if (!headerValue || headerValue.length == 0) return true;
-
-	const headerVals = headerValue.split(/[ ,]+/);
-	const rowVals:string[] = rowValue || [];
-
-	for (const filterVal of headerVals) {
-		if (filterVal.startsWith("!")) {
-			if (rowVals.indexOf(filterVal.slice(1)) != -1) {
-				return false;
-			}
-		} else {
-			if (rowVals.indexOf(filterVal) == -1) {
-				return false;
-			}
-		}
-	}
-	return true;
-}
-
-function fmtCodepoints(cell: CellComponent) {
-	const val = cell.getValue() as string;
-	if (!val) {
-		return "";
-	}
-	if (val.indexOf(" ") == -1) {
-		return `U+${val.toUpperCase()}`;
-	}
-
-	const parts = val.split(" ");
-
-	return `<abbr title="U+${parts.join(" U+").toUpperCase()}">${parts.length}</abbr>`
-
-}
-
-function fmtEmoji(cell: CellComponent) {
-	const val = cell.getValue() as string;
-	if (!val) {
-		return "";
-	}
-	return `<span style="font-size:2em;">${val}</span>`;
-}
-
-function fmtTags(cell: CellComponent) {
-	const tags = cell.getValue() as string[];
-	if (!tags || tags.length === 0) {
-		return "";
-	}
-
-	const container = document.createElement("div");
-
-	const keys = tags.sort();
-
-	for (const key of keys) {
-		var el = document.createElement("span");
-		el.className =
-			"badge border border-primary text-primary me-1 mb-1 text-decoration-none";
-		el.textContent = key;
-		el.style.cursor = "pointer";
-		el.onclick = (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			toggleTagFilter(cell, key);
-		}
-		container.appendChild(el);
-	}
-
-	return container;
-}
-
 
 function showError(msg: string) {
 	console.log(`ERROR: ${msg}`);
@@ -191,49 +93,7 @@ function showError(msg: string) {
 	document.getElementById("errmsg")!.innerHTML = msg;
 }
 
-function toggleTagFilter(cell: CellComponent, tag: string): void {
-	const tbl = cell.getTable();
-	var headerFilter = "";
-	const headerFilters = tbl.getHeaderFilters();
-	var existingFilter: Filter | null = null;
-	for (const hf of headerFilters) {
-		if (hf.field == "tags") {
-			headerFilter = hf.value;
-			existingFilter = hf;
-			break;
-		}
-	}
-
-	if (existingFilter == null) {
-		console.log(`adding to blank`);
-		tbl.setHeaderFilterValue(cell.getColumn(), tag);
-	} else {
-		tbl.setHeaderFilterValue(
-			cell.getColumn(),
-			(existingFilter.value = toggleTagArray(
-				headerFilter.split(/[ ,]+/),
-				tag
-			).join(" "))
-		);
-	}
-	tbl.refreshFilter();
-}
-
-function toggleTagArray(tags: string[], tag: string): string[] {
-	var idx = tags.indexOf(tag);
-	if (idx != -1) {
-		tags.splice(idx);
-		return tags;
-	}
-
-	tags.push(tag);
-	return tags;
-}
-
 async function main() {
-	let data: EmojiData[] = [];
-	let emojiVersion = 0.0;
-	let emojiVersionStr = "";
 
 	var rawData:any;
 	try {
@@ -249,34 +109,11 @@ async function main() {
 		}
 		rawData = (await resp.json() as SearchData);
 	} catch (error) {
-		showError(`Error fetching emoji data: ${error}`);
+		showError(`Error fetching ISO 639-2 data: ${error}`);
 		return;
 	}
 
-	var order = 0;
-	for (const row of rawData.data) {
-		const tags = [row.group.replaceAll(' ', '-'), row.subgroup, row.qualification, row.version];
-		if (row.description.endsWith("skin tone")) {
-			tags.push("skin-tone");
-			var colon = row.description.lastIndexOf(":");
-			if (colon != -1) {
-				const tone = row.description.slice(colon + 2, -10);
-				tags.push(tone.replaceAll(' ', '-').toLowerCase());
-			}
-		}
-		if (parseFloat(row.version) > emojiVersion) {
-			emojiVersion = parseFloat(row.version);
-			emojiVersionStr = row.version;
-		}
-		data.push( {
-			codepoints: row.codepoints,
-			order: order++,
-			emoji: row.emoji,
-			description: row.description,
-			tags,
-			keywords: row.keywords,
-		} );
-	}
+	const data = rawData.data;
 
 	console.log(data[0]);
 
@@ -312,7 +149,7 @@ async function main() {
 		TooltipModule,
 	]);
 
-	const table = new Tabulator("#emojitable", {
+	const table = new Tabulator("#datatable", {
 		autoResize: true,
 		data,
 		columns: [
@@ -321,7 +158,11 @@ async function main() {
 					const data = cell.getRow().getData();
 					e.preventDefault();
 					e.stopPropagation();
-					table.alert(`${data.description} copied to clipboard`);
+					table.alert(
+						`${
+							data.alpha_3_b || data.alpha_3_t
+						} copied to clipboard`
+					);
 					setTimeout(() => table.clearAlert(), 1000);
 					navigator.clipboard.writeText(data.emoji);
 				},
@@ -332,79 +173,49 @@ async function main() {
 				title: "",
 			},
 			{
-				cssClass: "p-0 flex justify-content-center align-items-center",
-				field: "emoji",
-				formatter: fmtEmoji,
+				field: "alpha_3_b",
 				headerFilter: "input",
-				headerFilterFunc: (
-					headerValue,
-					rowValue,
-					rowData,
-					filterParams
-				) => {
-					if (!headerValue) return true;
-					return headerValue == rowValue;
-				},
+				headerFilterFunc: filterRegex,
 				headerHozAlign: "center",
 				hozAlign: "center",
 				responsive: 0,
-				sorter: (a, b, aRow, bRow, column, dir, sorterParams) => {
-					var aOrder = aRow.getData().order;
-					var bOrder = bRow.getData().order;
-					return aOrder - bOrder;
-				},
-				title: "Emoji",
+				title: "Alpha-3",
 				width: 150,
 			},
 			{
-				field: "codepoints",
-				formatter: fmtCodepoints,
+				field: "alpha_3_t",
 				headerFilter: "input",
+				headerFilterFunc: filterRegex,
+				headerHozAlign: "center",
+				hozAlign: "center",
+				responsive: 0,
+				title: "Terminological",
+				width: 150,
+			},
+			{
+				field: "alpha_2",
+				headerFilter: "input",
+				headerFilterFunc: filterRegex,
 				headerHozAlign: "center",
 				hozAlign: "center",
 				responsive: 10,
-				sorter: function (a, b, aRow, bRow, column, dir, sorterParams) {
-					const aInt = parseInt(a, 16);
-					const bInt = parseInt(b, 16);
-					return aInt - bInt;
-				},
-				title: "Codepoint(s)",
+				title: "Alpha-2",
 				width: 150,
 			},
 			{
-				title: "Description",
-				field: "description",
-				formatter: "link",
-				formatterParams: {
-					labelField: "description",
-					url: (cell) => {
-						var codepoints = cell.getData().codepoints;
-						return `https://www.fileformat.info/info/emoji/${codepoints
-							.toLowerCase()
-							.replaceAll(" ", "_")}/index.htm`;
-					},
-					target: "_blank",
-				},
+				title: "Name (English)",
+				field: "name_en",
 				headerFilter: "input",
-				headerFilterFunc: filterDescription,
-				headerPopup: `Use <code>^</code> to search at the beginning<br/>Use <code>/regex/</code> to search with a regular expression`,
-				headerPopupIcon:
-					'<span class="badge rounded-pill text-bg-primary">?</span>',
+				headerFilterFunc: filterRegex,
 				responsive: 0,
-				//sorter: "string",
 				width: 375,
 			},
 			{
-				title: "Tags",
-				field: "tags",
-				formatter: fmtTags,
+				title: "Name (French)",
+				field: "name_fr",
 				headerFilter: "input",
-				headerFilterFunc: filterTags,
-				headerPopup: `Separate multiple tags with space or comma.<br/>Prefix a tag with <code>!</code> to exclude it.`,
-				headerPopupIcon:
-					'<span class="badge rounded-pill text-bg-primary">?</span>',
-				headerSort: false,
-				responsive: 15,
+				headerFilterFunc: filterRegex,
+				responsive: 0,
 				width: 375,
 			},
 		],
@@ -415,9 +226,9 @@ async function main() {
 		placeholder: "No matches",
 		responsiveLayout: "hide",
 		footerElement: `<span class="w-100 mx-2 my-1">
-				<img id="favicon" src="/favicon.svg" class="pe-2 mb-1" style="height:1.5em;" alt="EmojiSearch logo"/><span style="font-size: 1.2em;font-family: 'Emilys Candy'">EmojiSearch</span>
+				<a href="https://www.fileformat.info/"><img id="favicon" src="/favicon.svg" class="pe-2 mb-1" style="height:1.5em;" alt="FileFormat.Info logo"/></a><span class="fw-bold">ISO 639-2</span>
 				<span id="rowcount" class="px-3">Rows: ${data.length.toLocaleString()}</span>
-				<a class="d-none d-lg-block float-end" href="https://github.com/FileFormatInfo/emojisearch">Source</a>
+				<a class="d-none d-lg-block float-end" href="https://github.com/FileFormatInfo/iso-639-2">Source</a>
 			</span>`,
 	});
 
@@ -445,15 +256,8 @@ async function main() {
 		window.history.replaceState(null, "", "?" + qs);
 	});
 
-	table.on("tableBuilt", function () {
-		document.getElementById("favicon")!.onclick = () => {
-			table.alert(`Emoji v${emojiVersionStr} (built on ${statusData.lastmod} - ${statusData.commit})`);
-			setTimeout(() => table.clearAlert(), 2500);
-		}
-	});
-
 	document.getElementById("loading")!.classList.add("d-none");
-	document.getElementById("emojitable")!.classList.remove("d-none");
+	document.getElementById("datatable")!.classList.remove("d-none");
 }
 
 main();

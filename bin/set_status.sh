@@ -27,7 +27,7 @@ STATUS_FILE="${BASE_DIR}/public/status.json"
 LASTMOD=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 TECH="NodeJS $(node --version)"
 COMMIT=$(git -C "${BASE_DIR}" rev-parse --short HEAD)
-EMOJICOUNT=$(cat "${BASE_DIR}/public/emoji.json" | jq '.data | length')
+DATACOUNT=$(cat "${BASE_DIR}/public/iso-639-2.json" | jq '.data | length')
 
 echo "INFO: updating status file ${STATUS_FILE}"
 
@@ -35,9 +35,9 @@ jq \
 	--arg lastmod "${LASTMOD}" \
 	--arg tech "${TECH}" \
 	--arg commit "${COMMIT}" \
-	--arg emojicount "${EMOJICOUNT}" \
+	--arg datacount "${DATACOUNT}" \
 	--compact-output \
-	'.lastmod = $lastmod | .tech = $tech | .commit = $commit | .emojicount = $emojicount' \
+	'.lastmod = $lastmod | .tech = $tech | .commit = $commit | .datacount = $datacount' \
 	"${STATUS_FILE}" | sponge "${STATUS_FILE}"
 
 echo "INFO: completed at $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
