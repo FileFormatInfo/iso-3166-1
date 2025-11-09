@@ -31,10 +31,10 @@ jobs:
           sudo apt-get install -y jq moreutils
           npm install
 
-      - name: Process LOC file to JSON
+      - name: Process SIL data to JSON
         run: |
-          ./bin/loc_download.sh
-          ./bin/loc_to_json.mts
+          ./bin/sil_download.sh
+          ./bin/sil_to_json.mts
 
       - name: Set Status Info
         run: |

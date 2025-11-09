@@ -1,17 +1,17 @@
-# ISO 639-2 Data Browser <img alt="Languages icon" src="public/favicon.svg" height="90" align="right" />
+# ISO 639-3 Data Browser <img alt="Languages icon" src="public/favicon.svg" height="90" align="right" />
 
-[![deploy](https://github.com/FileFormatInfo/iso-639-2/actions/workflows/ghpages-deploy.yaml/badge.svg)](https://github.com/FileFormatInfo/iso-639-2/actions/workflows/ghpages-deploy.yaml)
-[![languages](https://img.shields.io/badge/dynamic/json.svg?label=languages&url=https%3A%2F%2Fiso-639-2.fileformat.info%2Fstatus.json&query=%24.datacount)](https://iso-639-2.fileformat.info/)
+[![deploy](https://github.com/FileFormatInfo/iso-639-3/actions/workflows/ghpages-deploy.yaml/badge.svg)](https://github.com/FileFormatInfo/iso-639-3/actions/workflows/ghpages-deploy.yaml)
+[![languages](https://img.shields.io/badge/dynamic/json.svg?label=languages&url=https%3A%2F%2Fiso-639-3.fileformat.info%2Fstatus.json&query=%24.datacount)](https://iso-639-3.fileformat.info/)
 [![Status](https://img.shields.io/nodeping/status/B6RTMJ8A-A6ES-4AVT-8XQK-6LMQJ5DYK7A1.svg?style=flat)](https://nodeping.com/reports/checks/B6RTMJ8A-A6ES-4AVT-8XQK-6LMQJ5DYK7A1)
 
-A web app for searching and browsing the ISO 639-2 Languages database.
+A web app for searching and browsing the ISO 639-3 Languages database.
 
-See it in action: [iso-639-2.fileformat.info](https://iso-639-2.fileformat.info/)
+See it in action: [iso-639-3.fileformat.info](https://iso-639-3.fileformat.info/)
 
 ## Links
 
-- [Library of Congress ISO 639-2 Page](https://www.loc.gov/standards/iso639-2/langhome.html)
-- [Library of Congress downloads](https://www.loc.gov/standards/iso639-2/ascii_8bits.html)
+- [SIL 639-3 Page](https://iso639-3.sil.org/about)
+- [SIL downloads](https://iso639-3.sil.org/code_tables/download_tables)
 
 ## Credits
 

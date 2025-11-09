@@ -22,11 +22,16 @@ import {
 } from "tabulator-tables";
 
 type SearchEntry = {
+	alpha_3: string;
 	alpha_3_b: string;
 	alpha_3_t: string;
 	alpha_2: string;
-	name_en: string;
-	name_fr: string;
+	name_ref: string;
+	comment?: string;
+	tags: string[];
+	parent?: string;
+	children?: string[];
+	active: boolean;
 };
 
 type SearchData = {
@@ -34,8 +39,9 @@ type SearchData = {
 	data: SearchEntry[];
 };
 
+const dataUrl = "/iso-639-3.json";
 
-const dataUrl = "/iso-639-2.json";
+
 
 function filterRegex(
 	headerValue: string,
@@ -44,6 +50,8 @@ function filterRegex(
 	filterParams: any
 ) {
 	if (!headerValue) return true;
+
+	if (!rowValue) return false;
 
 	if (headerValue.length == 1 && headerValue != "^" && headerValue != "/") {
 		// single character, do starts with
@@ -89,11 +97,116 @@ function filterRegex(
 	return false;
 }
 
+function filterTags(
+	headerValue: string,
+	rowValue: string[],
+	rowData: any,
+	filterParams: any
+) {
+	if (!headerValue || headerValue.length == 0) return true;
+
+	const headerVals = headerValue.split(/[ ,]+/);
+	const rowVals: string[] = rowValue || [];
+
+	for (const filterVal of headerVals) {
+		if (filterVal.startsWith("!")) {
+			if (rowVals.indexOf(filterVal.slice(1)) != -1) {
+				return false;
+			}
+		} else {
+			if (rowVals.indexOf(filterVal) == -1) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+function fmtTags(cell: CellComponent) {
+	const tags = cell.getValue() as string[];
+	const comment = cell.getRow().getData().comment as string | undefined;
+	if (!tags && !comment) {
+		return "";
+	}
+
+	const container = document.createElement("div");
+
+	if (comment) {
+		container.textContent = comment + " ";
+	}
+
+	if (tags) {
+		const keys = tags.sort();
+
+		for (const key of keys) {
+			var el = document.createElement("span");
+			el.className =
+				"badge border border-primary text-primary me-1 mb-1 text-decoration-none";
+			el.textContent = key.replace(/_/g, " ");
+			el.style.cursor = "pointer";
+			el.onclick = (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				toggleTagFilter(cell, key);
+			};
+			container.appendChild(el);
+		}
+	}
+
+	return container;
+}
+
 function showError(msg: string) {
 	console.log(`ERROR: ${msg}`);
 	document.getElementById("loading")!.classList.add("d-none");
 	document.getElementById("errdiv")!.classList.remove("d-none");
 	document.getElementById("errmsg")!.innerHTML = msg;
+}
+
+function toggleTagArray(tags: string[], tag: string): string[] {
+	var idx = tags.indexOf(tag);
+	if (idx != -1) {
+		tags.splice(idx, 1);
+		//tags.push(`!${tag}`);
+		return tags;
+	}
+
+	idx = tags.indexOf(`!${tag}`);
+	if (idx != -1) {
+		tags.splice(idx);
+		return tags;
+	}
+
+	tags.push(tag);
+	return tags;
+}
+
+function toggleTagFilter(cell: CellComponent, tag: string): void {
+	const tbl = cell.getTable();
+	var headerFilter = "";
+	const headerFilters = tbl.getHeaderFilters();
+	var existingFilter: Filter | null = null;
+	for (const hf of headerFilters) {
+		if (hf.field == "tags") {
+			headerFilter = hf.value;
+			existingFilter = hf;
+			break;
+		}
+	}
+
+	if (existingFilter == null) {
+		console.log(`adding to blank`);
+		tbl.setHeaderFilterValue(cell.getColumn(), tag);
+	} else {
+		tbl.setHeaderFilterValue(
+			cell.getColumn(),
+			(existingFilter.value = toggleTagArray(
+				headerFilter.split(/[ ,]+/),
+				tag
+			).join(" "))
+		);
+	}
+	tbl.refreshFilter();
 }
 
 async function main() {
@@ -112,7 +225,7 @@ async function main() {
 		}
 		rawData = (await resp.json() as SearchData);
 	} catch (error) {
-		showError(`Error fetching ISO 639-2 data: ${error}`);
+		showError(`Error fetching ISO 639-3 data: ${error}`);
 		return;
 	}
 
@@ -121,7 +234,7 @@ async function main() {
 	console.log(data[0]);
 
 	const qs = new URLSearchParams(window.location.search);
-	const initialSort: Sorter[] = [ { column: "alpha_3_b", dir: "asc" } ];
+	const initialSort: Sorter[] = [ { column: "alpha_3", dir: "asc" } ];
 	const filters: Filter[] = [];
 	if (qs) {
 		;
@@ -163,11 +276,7 @@ async function main() {
 					const data = cell.getRow().getData();
 					e.preventDefault();
 					e.stopPropagation();
-					table.alert(
-						`${
-							data.alpha_3_b || data.alpha_3_t
-						} copied to clipboard`
-					);
+					table.alert(`${data.alpha_3} copied to clipboard`);
 					setTimeout(() => table.clearAlert(), 1000);
 					navigator.clipboard.writeText(data.emoji);
 				},
@@ -178,7 +287,7 @@ async function main() {
 				title: "",
 			},
 			{
-				field: "alpha_3_b",
+				field: "alpha_3",
 				headerFilter: "input",
 				headerFilterFunc: filterRegex,
 				headerHozAlign: "center",
@@ -188,13 +297,24 @@ async function main() {
 				width: 150,
 			},
 			{
-				field: "alpha_3_t",
+				field: "alpha_3_b",
+				formatter: (cell: CellComponent) => {
+					let value = cell.getValue();
+					if (value === "") {
+						return value;
+					}
+					const t_value = cell.getRow().getData().alpha_3_t;
+					if (!t_value || t_value === value) {
+						return value;
+					}
+					return `${value}/${t_value}`;
+				},
 				headerFilter: "input",
 				headerFilterFunc: filterRegex,
 				headerHozAlign: "center",
 				hozAlign: "center",
 				responsive: 0,
-				title: "Terminological",
+				title: "639-2",
 				width: 150,
 			},
 			{
@@ -208,25 +328,38 @@ async function main() {
 				width: 150,
 			},
 			{
-				title: "Name (English)",
-				field: "name_en",
+				field: "parent",
+				headerFilter: "input",
+				headerFilterFunc: filterRegex,
+				headerHozAlign: "center",
+				hozAlign: "center",
+				responsive: 10,
+				title: "Parent",
+				width: 150,
+			},
+			{
+				title: "Name",
+				field: "name_ref",
 				headerFilter: "input",
 				headerFilterFunc: filterRegex,
 				responsive: 0,
 				width: 375,
 			},
 			{
-				title: "Name (French)",
-				field: "name_fr",
+				title: "Tags & Comments",
+				field: "tags",
+				formatter: fmtTags,
 				headerFilter: "input",
-				headerFilterFunc: filterRegex,
+				headerFilterFunc: filterTags,
 				responsive: 0,
 				width: 375,
 			},
 		],
 		data,
-		downloadEncoder:function(fileContents, mimeType){
-	        return new Blob([fileContents], {type:"text/plain;charset=utf-8"});
+		downloadEncoder: function (fileContents, mimeType) {
+			return new Blob([fileContents], {
+				type: "text/plain;charset=utf-8",
+			});
 		},
 		height: "100%",
 		initialHeaderFilter: filters,
@@ -236,12 +369,12 @@ async function main() {
 		placeholder: "No matches",
 		responsiveLayout: "hide",
 		footerElement: `<span class="w-100 mx-2 my-1">
-				<a href="https://www.fileformat.info/"><img id="favicon" src="/favicon.svg" class="pe-2 mb-1" style="height:1.5em;" alt="FileFormat.Info logo"/></a><span class="fw-bold">ISO 639-2</span>
+				<a href="https://www.fileformat.info/"><img id="favicon" src="/favicon.svg" class="pe-2 mb-1" style="height:1.5em;" alt="FileFormat.Info logo"/></a><span class="fw-bold">ISO 639-3</span>
 				<span id="rowcount" class="px-3">Rows: ${data.length.toLocaleString()}</span>
 				<span class="d-none d-md-inline">
 					<a class="px-1" id="download">Download \u279A</a>
 				</span>
-				<a class="d-none d-lg-block float-end" href="https://github.com/FileFormatInfo/iso-639-2">Source</a>
+				<a class="d-none d-lg-block float-end" href="https://github.com/FileFormatInfo/iso-639-3">Source</a>
 			</span>`,
 	});
 
@@ -273,7 +406,7 @@ async function main() {
 		document.getElementById("download")!.addEventListener("click", (e) => {
 			e.preventDefault();
 			console.log("INFO: download clicked");
-			table.downloadToTab("csv", "iso-639-2.csv", {});
+			table.downloadToTab("csv", "iso-639-3.csv", {});
 		});
 	});
 
