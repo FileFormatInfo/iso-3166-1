@@ -29,12 +29,15 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y jq moreutils
+          sudo snap install yq
           npm install
+          yq --version
+          jq --version
 
-      - name: Process SIL data to JSON
+      - name: Process Six Group data to JSON
         run: |
-          ./bin/sil_download.sh
-          ./bin/sil_to_json.mts
+          ./bin/sixgroup_download.sh
+          ./bin/sixgroup_to_json.mts
 
       - name: Set Status Info
         run: |
