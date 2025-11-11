@@ -22,13 +22,16 @@ import {
 } from "tabulator-tables";
 
 type SearchEntry = {
+	alpha_2: string;
 	alpha_3: string;
 	numeric: string;
-	name: string;
-	countries: string[];
-	subunit: number;
-	is_fund: boolean;
-	active: boolean;
+	common_name_en: string;
+	common_name_local: string;
+	official_name_en: string;
+	official_name_local: string;
+	independent: boolean;
+	un_member: boolean;
+	tlds: string[];
 };
 
 type SearchData = {
@@ -36,9 +39,7 @@ type SearchData = {
 	data: SearchEntry[];
 };
 
-const dataUrl = "/iso-4217.json";
-
-
+const dataUrl = "/iso-3166-1.json";
 
 function filterRegex(
 	headerValue: string,
@@ -222,7 +223,7 @@ async function main() {
 		}
 		rawData = (await resp.json() as SearchData);
 	} catch (error) {
-		showError(`Error fetching ISO 4217 data: ${error}`);
+		showError(`Error fetching ISO 3166-1 data: ${error}`);
 		return;
 	}
 
@@ -231,7 +232,7 @@ async function main() {
 	console.log(data[0]);
 
 	const qs = new URLSearchParams(window.location.search);
-	const initialSort: Sorter[] = [ { column: "alpha_3", dir: "asc" } ];
+	const initialSort: Sorter[] = [ { column: "alpha_2", dir: "asc" } ];
 	const filters: Filter[] = [];
 	if (qs) {
 		;
@@ -242,6 +243,7 @@ async function main() {
 			}
 			if (key == "dir") {
 				initialSort[0].dir = value == "desc" ? "desc" : "asc";
+				continue;
 			}
 			if (key && value) {
 				filters.push({ field: key, type: "=", value: value });
@@ -284,6 +286,17 @@ async function main() {
 				title: "",
 			},
 			{
+				field: "alpha_2",
+				headerFilter: "input",
+				headerFilterFunc: filterRegex,
+				headerHozAlign: "center",
+				hozAlign: "center",
+				responsive: 0,
+				title: "Alpha-2",
+				titleDownload: "alpha_2",
+				width: 150,
+			},
+			{
 				field: "alpha_3",
 				headerFilter: "input",
 				headerFilterFunc: filterRegex,
@@ -306,18 +319,17 @@ async function main() {
 				width: 150,
 			},
 			{
-				field: "subunit",
+				field: "tlds",
+				formatter: (cell) => cell.getValue().join(", "),
 				headerFilter: "input",
-				headerFilterFunc: filterRegex,
-				headerHozAlign: "center",
-				hozAlign: "center",
-				responsive: 0,
-				title: "# Decimals",
-				titleDownload: "subunit",
-				width: 150,
+				headerFilterFunc: filterTags,
+				responsive: 5,
+				title: "TLDs",
+				titleDownload: "tlds",
+				width: 200,
 			},
 			{
-				field: "is_fund",
+				field: "un_member",
 				formatter: "tickCross",
 				formatterParams: {
 					allowEmpty: true,
@@ -330,28 +342,45 @@ async function main() {
 				headerHozAlign: "center",
 				hozAlign: "center",
 				responsive: 20,
-				title: "Is Fund?",
-				titleDownload: "is_fund",
+				title: "UN Member",
+				titleDownload: "un_member",
 				width: 125,
 			},
 			{
-				field: "name",
+				field: "independent",
+				formatter: "tickCross",
+				formatterParams: {
+					allowEmpty: true,
+					crossElement: false,
+				},
+				headerFilter: "tickCross",
+				headerFilterParams: {
+					tristate: true,
+				},
+				headerHozAlign: "center",
+				hozAlign: "center",
+				responsive: 20,
+				title: "Independent",
+				titleDownload: "independent",
+				width: 125,
+			},
+			{
+				field: "common_name_en",
 				headerFilter: "input",
 				headerFilterFunc: filterRegex,
 				responsive: 10,
-				title: "Name",
-				titleDownload: "name",
+				title: "Name (English)",
+				titleDownload: "name_en",
 				width: 250,
 			},
 			{
-				download: false,
-				field: "countries",
-				formatter: (cell) => cell.getValue().join(", "),
+				field: "common_name_local",
 				headerFilter: "input",
-				headerFilterFunc: filterTags,
-				responsive: 0,
-				title: "Countries",
-				width: 375,
+				headerFilterFunc: filterRegex,
+				responsive: 10,
+				title: "Name (Local)",
+				titleDownload: "name_local",
+				width: 250,
 			},
 		],
 		data,
@@ -368,12 +397,12 @@ async function main() {
 		placeholder: "No matches",
 		responsiveLayout: "hide",
 		footerElement: `<span class="w-100 mx-2 my-1">
-				<a href="https://www.fileformat.info/"><img id="favicon" src="/favicon.svg" class="pe-2 mb-1" style="height:1.5em;" alt="FileFormat.Info logo"/></a><span class="fw-bold">ISO 4217</span>
+				<a href="https://www.fileformat.info/"><img id="favicon" src="/favicon.svg" class="pe-2 mb-1" style="height:1.5em;" alt="FileFormat.Info logo"/></a><span class="fw-bold">ISO 3166-1</span>
 				<span id="rowcount" class="px-3">Rows: ${data.length.toLocaleString()}</span>
 				<span class="d-none d-md-inline">
-					Download: <a href="/iso-4217.json">JSON</a> <a class="px-1" id="download">CSV</a>
+					Download: <a href="/iso-3166-1.json">JSON</a> <a class="px-1" id="download">CSV</a>
 				</span>
-				<a class="d-none d-lg-block float-end" href="https://github.com/FileFormatInfo/iso-4217">Source</a>
+				<a class="d-none d-lg-block float-end" href="https://github.com/FileFormatInfo/iso-3166-1">Source</a>
 			</span>`,
 	});
 
@@ -405,7 +434,7 @@ async function main() {
 		document.getElementById("download")!.addEventListener("click", (e) => {
 			e.preventDefault();
 			console.log("INFO: download clicked");
-			table.downloadToTab("csv", "iso-4217.csv", {});
+			table.downloadToTab("csv", "iso-3166-1.csv", {});
 		});
 	});
 

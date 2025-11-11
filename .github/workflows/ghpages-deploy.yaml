@@ -34,10 +34,10 @@ jobs:
           yq --version
           jq --version
 
-      - name: Process Six Group data to JSON
+      - name: Process Github data to JSON
         run: |
-          ./bin/sixgroup_download.sh
-          ./bin/sixgroup_to_json.mts
+          ./bin/gh_download.sh
+          ./bin/gh_to_json.mts
 
       - name: Set Status Info
         run: |

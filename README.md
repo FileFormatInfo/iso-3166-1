@@ -1,17 +1,17 @@
-# ISO 4217 Currencies Data Browser <img alt="Languages icon" src="public/favicon.svg" height="90" align="right" />
+# ISO 3166-1 Countries Data Browser <img alt="Languages icon" src="public/favicon.svg" height="90" align="right" />
 
-[![deploy](https://github.com/FileFormatInfo/iso-4217/actions/workflows/ghpages-deploy.yaml/badge.svg)](https://github.com/FileFormatInfo/iso-4217/actions/workflows/ghpages-deploy.yaml)
-[![currencies](https://img.shields.io/badge/dynamic/json.svg?label=currencies&url=https%3A%2F%2Fiso-4217.fileformat.info%2Fstatus.json&query=%24.datacount)](https://iso-4217.fileformat.info/)
+[![deploy](https://github.com/FileFormatInfo/iso-3166-1/actions/workflows/ghpages-deploy.yaml/badge.svg)](https://github.com/FileFormatInfo/iso-3166-1/actions/workflows/ghpages-deploy.yaml)
+[![currencies](https://img.shields.io/badge/dynamic/json.svg?label=currencies&url=https%3A%2F%2Fiso-3166-1.fileformat.info%2Fstatus.json&query=%24.datacount)](https://iso-3166-1.fileformat.info/)
 [![Status](https://img.shields.io/nodeping/status/BNS8BXQX-FIS3-4ORQ-87JX-JKQELP1RI4OV.svg?style=flat)](https://nodeping.com/reports/checks/BNS8BXQX-FIS3-4ORQ-87JX-JKQELP1RI4OV)
 
-A web app for searching and browsing the ISO 4217 Currencies database.
+A web app for searching and browsing the ISO 3166-1 Countries database.
 
-See it in action: [iso-4217.fileformat.info](https://iso-4217.fileformat.info/)
+See it in action: [iso-3166-1.fileformat.info](https://iso-3166-1.fileformat.info/)
 
 ## Links
 
-- [Six Group downloads](https://www.six-group.com/en/products-services/financial-information/market-reference-data/data-standards.html)
-- [Wikipedia ISO 4217 Page](https://en.wikipedia.org/wiki/ISO_4217)
+- https://github.com/mledoze/countries
+- [Wikipedia ISO 3166-1 Page](https://en.wikipedia.org/wiki/ISO_3166-1)
 
 ## Credits
 
