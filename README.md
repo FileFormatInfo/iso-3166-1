@@ -28,3 +28,5 @@ See it in action: [iso-3166-1.fileformat.info](https://iso-3166-1.fileformat.inf
 
 ## To Do
 
+- [ ] use [accessorDownload](https://tabulator.info/docs/6.3/download#advanced-accessors) to format data for download
+- [ ] move UN and Independent into tags column
